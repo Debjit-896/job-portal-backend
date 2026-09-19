@@ -19,9 +19,9 @@ public interface CompanyService {
                                           CompanyStatus companyStatus);
 
     CompanyResponse updateCompany(Long ownerId, UUID companyId, CompanyRequest request);
-    CompanyResponse verifyCompany(UUID companyId);
-    void deleteCompany(UUID companyId);
-    CompanyResponse deActivateCompany(UUID companyId);
+    CompanyResponse verifyCompany(UUID companyId) throws Exception;
+    void deleteCompany(UUID companyId, Long ownerId) throws Exception;
+    CompanyResponse deActivateCompany(UUID companyId) throws Exception;
 
     // Only for inter service call
     Company getCompanyEntityById(UUID companyId);

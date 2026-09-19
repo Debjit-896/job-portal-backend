@@ -146,18 +146,32 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public CompanyResponse verifyCompany(UUID companyId) {
-        return null;
+    public CompanyResponse verifyCompany(UUID companyId) throws Exception {
+        Company company = getCompanyEntityById(companyId);
+        company.setCompanyStatus(CompanyStatus.ACTIVE);
+        company.setIsVerified(true);
+        return CompanyMapper.toResponse(companyRepository.save(company));
     }
 
     @Override
-    public void deleteCompany(UUID companyId) {
-
+    public void deleteCompany(UUID companyId, Long ownerId){
+        Company company = getCompanyEntityById(companyId);
+        assertOwner(company, ownerId);
+        companyRepository.delete(company);
     }
 
-    @Override
-    public CompanyResponse deActivateCompany(UUID companyId) {
-        return null;
+    private void assertOwner(Company company, Long ownerId) {
+		if(!company.getOwnerId().equals(ownerId)){
+            throw new IllegalArgumentException("You are not the owner of this company");
+        }
+	}
+
+	@Override
+    public CompanyResponse deActivateCompany(UUID companyId) throws Exception {
+        Company company = getCompanyEntityById(companyId);
+        company.setCompanyStatus(CompanyStatus.SUSPENDED);
+        company.setIsVerified(false);
+        return CompanyMapper.toResponse(companyRepository.save(company));
     }
 
     @Override

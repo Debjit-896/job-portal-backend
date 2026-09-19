@@ -71,6 +71,9 @@ public class Company {
     @Builder.Default
     private Boolean active = true;
 
+    @Builder.Default
+    private Boolean isVerified = false;
+
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
