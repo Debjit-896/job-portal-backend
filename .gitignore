@@ -1,0 +1,20 @@
+# Maven
+target/
+**/target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Maven wrapper generated files
+.mvn/timing.properties
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
