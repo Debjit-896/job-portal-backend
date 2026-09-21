@@ -18,9 +18,9 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
 
     Optional<Company> findByOwnerId(Long ownerId);
     boolean existsByOwnerId(Long ownerId);
-    boolean existByName(String name);
-    boolean existBySlug(String slug);
-    boolean existByRegistrationNumber(String registrationNumber);
+    boolean existsByName(String name);
+    boolean existsBySlug(String slug);
+    boolean existsByRegistrationNumber(String registrationNumber);
 
     @Query("SELECT c FROM Company c WHERE " +
             "(:companyType IS NULL OR c.companyType = :companyType) AND " +

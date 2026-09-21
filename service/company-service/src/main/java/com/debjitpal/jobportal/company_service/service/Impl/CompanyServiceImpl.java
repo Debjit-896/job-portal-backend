@@ -13,6 +13,7 @@ import com.debjitpal.jobportal.dto.response.CompanyResponse;
 import com.debjitpal.jobportal.dto.response.SocialLinksResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
@@ -31,11 +33,11 @@ public class CompanyServiceImpl implements CompanyService {
             throw new IllegalArgumentException("Company already exists for this owner");
         }
 
-        if (companyRepository.existByName(request.getName())) {
+        if (companyRepository.existsByName(request.getName())) {
             throw new IllegalArgumentException("Company name already exists");
         }
 
-        if (request.getRegistrationNumber() != null && companyRepository.existByRegistrationNumber(request.getRegistrationNumber())) {
+        if (request.getRegistrationNumber() != null && companyRepository.existsByRegistrationNumber(request.getRegistrationNumber())) {
             throw new IllegalArgumentException("Company registration number already exists. Please provide a different registration number.");
         }
 
@@ -78,13 +80,13 @@ public class CompanyServiceImpl implements CompanyService {
         String baseSlug = name.toLowerCase().replaceAll("[^a-z0-9\\s-]+", "")
                 .trim().replaceAll("[\\s-]+", "-");
 
-        if (!companyRepository.existBySlug(baseSlug)) {
+        if (!companyRepository.existsBySlug(baseSlug)) {
             return baseSlug;
         }
         
         int counter = 1;
 
-        while (companyRepository.existBySlug(baseSlug + "-" + counter)) {
+        while (companyRepository.existsBySlug(baseSlug + "-" + counter)) {
             counter++;
         }
 
@@ -117,13 +119,13 @@ public class CompanyServiceImpl implements CompanyService {
     public CompanyResponse updateCompany(Long ownerId, UUID companyId, CompanyRequest request) {
         Company company = getCompanyEntityById(companyId);
         
-        if (!company.getName().equals(request.getName()) && companyRepository.existByName(request.getName())){
+        if (!company.getName().equals(request.getName()) && companyRepository.existsByName(request.getName())){
             throw new IllegalArgumentException("Company name already exists");
         }
 
         if (request.getRegistrationNumber() != null &&
         !request.getRegistrationNumber().equals(company.getRegistrationNumber()) &&
-        companyRepository.existByRegistrationNumber(request.getRegistrationNumber())){
+        companyRepository.existsByRegistrationNumber(request.getRegistrationNumber())){
             throw new IllegalArgumentException("Registration number already exists");
         }
 
@@ -150,6 +152,7 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = getCompanyEntityById(companyId);
         company.setCompanyStatus(CompanyStatus.ACTIVE);
         company.setIsVerified(true);
+        company.setVerifiedAt(java.time.LocalDateTime.now());
         return CompanyMapper.toResponse(companyRepository.save(company));
     }
 
@@ -171,6 +174,7 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = getCompanyEntityById(companyId);
         company.setCompanyStatus(CompanyStatus.SUSPENDED);
         company.setIsVerified(false);
+        company.setVerifiedAt(null);
         return CompanyMapper.toResponse(companyRepository.save(company));
     }
 

@@ -37,11 +37,13 @@ public class CompanyMapper {
                 .companyType(company.getCompanyType())
                 .industryType(company.getIndustryType())
                 .companyStatus(company.getCompanyStatus())
+                .registrationNumber(company.getRegistrationNumber())
                 .active(company.getActive())
                 .ownerId(company.getOwnerId())
                 .socialLinks(socialLinks)
                 .createdAt(company.getCreatedAt())
                 .updatedAt(company.getUpdatedAt())
+                .verifiedAt(company.getVerifiedAt())
                 .build();
     }
 }

@@ -64,7 +64,7 @@ public class Company {
     @Column(unique = true, nullable = false)
     private Long ownerId;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @Builder.Default
     private List<SocialLinks> socialLinks = new ArrayList<>();
 
@@ -82,6 +82,5 @@ public class Company {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Column(nullable = false)
     private LocalDateTime verifiedAt;
 }
