@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface JobService {
-    JobResponse createJob(Long employerId, JobRequest request);
+    JobResponse createJob(UUID employerId, JobRequest request);
 
     JobResponse getJobById(UUID jobId);
 
@@ -22,7 +22,7 @@ public interface JobService {
 
     JobResponse closeJob(UUID jobId, UUID employerId);
 
-    JobResponse deleteJob(UUID jobId, UUID employerId);
+    void deleteJob(UUID jobId, UUID employerId);
 
     List<JobResponse> getAllJobsAdmin();
 }

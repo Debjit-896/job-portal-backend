@@ -53,8 +53,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.debjitpal.jobportal</groupId>
-			<artifactId>company-service</artifactId>
-			<version>${project.version}</version>
+			<artifactId>job-portal-common-library</artifactId>
 		</dependency>
 	</dependencies>
 

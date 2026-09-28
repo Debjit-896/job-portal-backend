@@ -30,6 +30,9 @@ public class Job {
     private UUID companyId;
 
     @Column(nullable = false)
+    private UUID employerId;
+
+    @Column(nullable = false)
     private String title;
 
     @Column(nullable = false, length = 5000)
