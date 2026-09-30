@@ -4,6 +4,8 @@ import com.debjitpal.jobportal.job_service.model.JobCategory;
 import com.debjitpal.jobportal.job_service.payload.JobCategoryResponse;
 import java.util.List;
 
+
+
 public class JobCategoryMapper {
 
   public static JobCategoryResponse toJobCategoryResponse(
@@ -14,7 +16,7 @@ public class JobCategoryMapper {
       subCategories =
           category.getSubCategories().stream()
               .map(sub -> toJobCategoryResponse(sub, false))
-              .collect(Collectors.toList());
+              .toList();
     }
 
     return JobCategoryResponse.builder()
@@ -26,7 +28,7 @@ public class JobCategoryMapper {
         .iconUrl(category.getIconUrl())
         .isActive(category.getIsActive())
         .parentName(category.getParent() != null ? category.getParent().getName() : null)
-        .createdAt(category.getCreatedAt())
+        .createdAt(category.getCreatedAt() != null ? category.getCreatedAt().toString() : null)
         .subCategories(subCategories)
         .build();
   }
