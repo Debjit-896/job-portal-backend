@@ -9,6 +9,6 @@ public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "Welcome to the User Service!"+ UserRole.APPLICANT;
+        return "Welcome to the User Service!"+ UserRole.JOB_SEEKER;
     }
 }

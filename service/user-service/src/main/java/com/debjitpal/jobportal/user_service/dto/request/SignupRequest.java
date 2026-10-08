@@ -1,4 +1,4 @@
-package com.debjitpal.jobportal.user_service.dto;
+package com.debjitpal.jobportal.user_service.dto.request;
 
 import com.debjitpal.jobportal.domain.UserRole;
 import jakarta.validation.constraints.Email;
@@ -15,11 +15,12 @@ public class SignupRequest {
     @NotBlank(message = "Email is required")
     private String email;
 
+    public void setEmail(String email) {
+        this.email = email != null ? email.toLowerCase() : null;
+    }
+
     @NotBlank(message = "Password is required")
     private String password;
 
-    private String phoneNumber;
-
-    @NotNull(message = "Role is required")
     private UserRole role;
 }

@@ -12,8 +12,6 @@ public class UserResponse {
     private UUID id;
     private String name;
     private String email;
-    private String phone;
-    private String profileImage;
     private UserRole role;
     private UserStatus status;
     private LocalDateTime lastLoginAt;

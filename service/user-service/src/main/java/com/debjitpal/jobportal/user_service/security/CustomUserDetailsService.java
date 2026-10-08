@@ -1,6 +1,6 @@
 package com.debjitpal.jobportal.user_service.security;
 
-import com.debjitpal.jobportal.user_service.model.User;
+import com.debjitpal.jobportal.user_service.entity.User;
 import com.debjitpal.jobportal.user_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,11 +21,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(username);
-
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found with : " + username);
-        }
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with : " + username));
 
         GrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().toString());
         Collection<GrantedAuthority> authorities = Collections.singletonList(authority);
