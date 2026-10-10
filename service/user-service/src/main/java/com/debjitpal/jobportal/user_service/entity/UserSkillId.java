@@ -5,7 +5,6 @@ import lombok.*;
 
 import java.io.Serializable;
 import java.util.UUID;
-import java.util.UUID;
 
 @Embeddable
 @Getter

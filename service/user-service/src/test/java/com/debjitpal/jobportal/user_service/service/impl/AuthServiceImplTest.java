@@ -59,7 +59,7 @@ public class AuthServiceImplTest {
                 .name("Test User")
                 .role(UserRole.JOB_SEEKER)
                 .status(UserStatus.ACTIVE)
-                .isEmailVerified(true)
+                .emailVerified(true)
                 .build();
     }
 

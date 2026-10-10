@@ -32,9 +32,6 @@ public class TokenServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(tokenService, "jwtSecret", "my-super-secret-key-that-is-very-long-for-hmac-sha-256");
-        ReflectionTestUtils.setField(tokenService, "jwtExpirationMs", 3600000); // 1 hour
-        ReflectionTestUtils.setField(tokenService, "jwtRefreshExpirationMs", 86400000); // 1 day
 
         testUser = User.builder().id(UUID.randomUUID()).email("test@example.com").build();
     }
