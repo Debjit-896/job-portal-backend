@@ -13,6 +13,10 @@ import com.debjitpal.jobportal.user_service.security.CustomUserDetailsService;
 import com.debjitpal.jobportal.user_service.security.JwtProvider;
 import com.debjitpal.jobportal.user_service.service.AuthService;
 import com.debjitpal.jobportal.user_service.service.TokenService;
+import com.debjitpal.jobportal.user_service.service.GoogleTokenVerifierService;
+import com.debjitpal.jobportal.user_service.service.GithubTokenVerifierService;
+import com.debjitpal.jobportal.user_service.util.ClientInfo;
+import com.debjitpal.jobportal.user_service.util.ClientInfoResolver;
 import com.debjitpal.jobportal.user_service.entity.RefreshToken;
 import com.debjitpal.jobportal.dto.response.UserResponse;
 import com.debjitpal.jobportal.user_service.dto.request.*;
@@ -38,6 +42,9 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final TokenService tokenService;
+    private final ClientInfoResolver clientInfoResolver;
+    private final GoogleTokenVerifierService googleTokenVerifierService;
+    private final GithubTokenVerifierService githubTokenVerifierService;
 
     @Override
     public AuthResponse signup(SignupRequest request) {
@@ -71,8 +78,9 @@ public class AuthServiceImpl implements AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        ClientInfo clientInfo = clientInfoResolver.getClientInfo();
         String jwt = jwtProvider.generateToken(authentication, savedUser.getId());
-        String refreshToken = tokenService.generateRefreshToken(savedUser, "Unknown Device", "Unknown IP", "Unknown User Agent");
+        String refreshToken = tokenService.generateRefreshToken(savedUser, clientInfo.getDeviceInfo(), clientInfo.getIpAddress(), clientInfo.getUserAgent());
 
         AuthResponse authResponse = new AuthResponse();
         authResponse.setTitle("Welcome " + savedUser.getName());
@@ -92,8 +100,9 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + request.getEmail()));
+        ClientInfo clientInfo = clientInfoResolver.getClientInfo();
         String jwt = jwtProvider.generateToken(authentication, user.getId());
-        String refreshToken = tokenService.generateRefreshToken(user, "Unknown Device", "Unknown IP", "Unknown User Agent");
+        String refreshToken = tokenService.generateRefreshToken(user, clientInfo.getDeviceInfo(), clientInfo.getIpAddress(), clientInfo.getUserAgent());
 
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
@@ -174,8 +183,9 @@ public class AuthServiceImpl implements AuthService {
                 userDetails.getAuthorities());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        ClientInfo clientInfo = clientInfoResolver.getClientInfo();
         String jwt = jwtProvider.generateToken(authentication, user.getId());
-        String refreshToken = tokenService.generateRefreshToken(user, "Unknown Device", "Unknown IP", "Unknown User Agent");
+        String refreshToken = tokenService.generateRefreshToken(user, clientInfo.getDeviceInfo(), clientInfo.getIpAddress(), clientInfo.getUserAgent());
 
         AuthResponse authResponse = new AuthResponse();
         authResponse.setTitle("Welcome " + user.getName());
@@ -184,6 +194,18 @@ public class AuthServiceImpl implements AuthService {
         authResponse.setRefreshToken(refreshToken);
         authResponse.setUserResponse(UserMapper.toUserResponse(user));
         return authResponse;
+    }
+
+    @Override
+    public AuthResponse googleLogin(GoogleLoginRequest request) {
+        OAuthLoginRequest oauthRequest = googleTokenVerifierService.verifyGoogleIdToken(request.getIdToken());
+        return oauthLogin(oauthRequest);
+    }
+
+    @Override
+    public AuthResponse githubLogin(GithubLoginRequest request) {
+        OAuthLoginRequest oauthRequest = githubTokenVerifierService.exchangeCodeForUser(request.getCode());
+        return oauthLogin(oauthRequest);
     }
 
     @Override
@@ -223,9 +245,10 @@ public class AuthServiceImpl implements AuthService {
                 userDetails.getAuthorities());
                 
         String newJwt = jwtProvider.generateToken(authentication, user.getId());
+        ClientInfo clientInfo = clientInfoResolver.getClientInfo();
         // For security, rotate refresh token
         tokenService.revokeRefreshToken(request.getRefreshToken());
-        String newRefreshToken = tokenService.generateRefreshToken(user, "Unknown Device", "Unknown IP", "Unknown User Agent");
+        String newRefreshToken = tokenService.generateRefreshToken(user, clientInfo.getDeviceInfo(), clientInfo.getIpAddress(), clientInfo.getUserAgent());
         
         AuthResponse authResponse = new AuthResponse();
         authResponse.setTitle("Token Refreshed");

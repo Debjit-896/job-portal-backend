@@ -39,6 +39,20 @@ public class AuthController {
         return ResponseEntity.ok(authService.oauthLogin(authRequest));
     }
 
+    @PostMapping("/google-login")
+    public ResponseEntity<AuthResponse> googleLogin(
+            @RequestBody @Valid GoogleLoginRequest authRequest
+    ) {
+        return ResponseEntity.ok(authService.googleLogin(authRequest));
+    }
+
+    @PostMapping("/github-login")
+    public ResponseEntity<AuthResponse> githubLogin(
+            @RequestBody @Valid GithubLoginRequest authRequest
+    ) {
+        return ResponseEntity.ok(authService.githubLogin(authRequest));
+    }
+
     @PostMapping("/link-oauth")
     public ResponseEntity<AuthResponse> linkOAuthAccount(
             @RequestBody @Valid LinkOAuthRequest linkRequest,

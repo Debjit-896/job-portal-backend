@@ -9,6 +9,8 @@ public interface AuthService {
     AuthResponse signup(SignupRequest request);
     AuthResponse login(LoginRequest request);
     AuthResponse oauthLogin(OAuthLoginRequest request);
+    AuthResponse googleLogin(GoogleLoginRequest request);
+    AuthResponse githubLogin(GithubLoginRequest request);
     AuthResponse linkOAuthAccount(LinkOAuthRequest request, String userEmail);
 
     AuthResponse refresh(RefreshTokenRequest request);

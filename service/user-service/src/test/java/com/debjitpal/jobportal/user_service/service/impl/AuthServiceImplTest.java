@@ -10,6 +10,8 @@ import com.debjitpal.jobportal.user_service.repository.UserProfileRepository;
 import com.debjitpal.jobportal.user_service.repository.UserRepository;
 import com.debjitpal.jobportal.user_service.security.JwtProvider;
 import com.debjitpal.jobportal.user_service.service.TokenService;
+import com.debjitpal.jobportal.user_service.util.ClientInfo;
+import com.debjitpal.jobportal.user_service.util.ClientInfoResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +47,15 @@ public class AuthServiceImplTest {
     @Mock
     private TokenService tokenService;
 
+    @Mock
+    private ClientInfoResolver clientInfoResolver;
+
+    @Mock
+    private com.debjitpal.jobportal.user_service.service.GoogleTokenVerifierService googleTokenVerifierService;
+
+    @Mock
+    private com.debjitpal.jobportal.user_service.service.GithubTokenVerifierService githubTokenVerifierService;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -52,6 +63,9 @@ public class AuthServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(clientInfoResolver.getClientInfo()).thenReturn(
+                new ClientInfo("Test Device", "127.0.0.1", "Test-Agent")
+        );
         testUser = User.builder()
                 .id(UUID.randomUUID())
                 .email("test@test.com")
