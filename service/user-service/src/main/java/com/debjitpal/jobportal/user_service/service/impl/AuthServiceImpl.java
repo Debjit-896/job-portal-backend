@@ -12,25 +12,32 @@ import com.debjitpal.jobportal.user_service.repository.UserRepository;
 import com.debjitpal.jobportal.user_service.security.CustomUserDetailsService;
 import com.debjitpal.jobportal.user_service.security.JwtProvider;
 import com.debjitpal.jobportal.user_service.service.AuthService;
+import com.debjitpal.jobportal.user_service.service.EmailService;
 import com.debjitpal.jobportal.user_service.service.TokenService;
 import com.debjitpal.jobportal.user_service.service.GoogleTokenVerifierService;
 import com.debjitpal.jobportal.user_service.service.GithubTokenVerifierService;
 import com.debjitpal.jobportal.user_service.util.ClientInfo;
 import com.debjitpal.jobportal.user_service.util.ClientInfoResolver;
 import com.debjitpal.jobportal.user_service.entity.RefreshToken;
+import com.debjitpal.jobportal.dto.response.ApiResponse;
 import com.debjitpal.jobportal.dto.response.UserResponse;
 import com.debjitpal.jobportal.user_service.dto.request.*;
 import com.debjitpal.jobportal.user_service.dto.response.*;
+import com.debjitpal.jobportal.user_service.exception.BadRequestException;
+import com.debjitpal.jobportal.user_service.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -42,6 +49,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final TokenService tokenService;
+    private final EmailService emailService;
     private final ClientInfoResolver clientInfoResolver;
     private final GoogleTokenVerifierService googleTokenVerifierService;
     private final GithubTokenVerifierService githubTokenVerifierService;
@@ -70,8 +78,16 @@ public class AuthServiceImpl implements AuthService {
 
         UserProfile profile = UserProfile.builder()
                 .user(savedUser)
+                .phone(request.getPhone())
                 .build();
         userProfileRepository.save(profile);
+
+        // Automatically dispatch verification OTP to user's registered email
+        try {
+            tokenService.generateEmailVerificationOtp(savedUser);
+        } catch (Exception e) {
+            log.warn("Failed to send initial email verification OTP during signup to {}: {}", savedUser.getEmail(), e.getMessage());
+        }
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 user.getEmail(), user.getPassword());
@@ -272,24 +288,47 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         // Find user by email, ignore if not found to prevent email enumeration
         userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
-            String resetToken = tokenService.generatePasswordResetToken(user);
-            // TODO: send resetToken to user via email
-            System.out.println("Generated reset token for " + user.getEmail() + ": " + resetToken);
+            String resetOtp = tokenService.generatePasswordResetOtp(user);
+            emailService.sendOtpEmail(
+                    user.getEmail(),
+                    resetOtp,
+                    "Your AI Job Portal Password Reset OTP"
+            );
+            log.info("Password reset OTP sent to {}", user.getEmail());
         });
     }
 
     @Override
+    public VerifyResetOtpResponse verifyResetOtp(VerifyResetOtpRequest request) {
+        String resetToken = tokenService.verifyPasswordResetOtp(request.getEmail(), request.getOtp());
+        return VerifyResetOtpResponse.builder()
+                .resetToken(resetToken)
+                .message("OTP verified successfully")
+                .build();
+    }
+
+    @Override
     public void resetPassword(ResetPasswordRequest request) {
-        com.debjitpal.jobportal.user_service.entity.PasswordResetToken token = tokenService.validatePasswordResetToken(request.getToken());
-        User user = token.getUser();
+        User user;
+        if (request.getToken() != null && !request.getToken().isBlank()) {
+            com.debjitpal.jobportal.user_service.entity.PasswordResetToken token = tokenService.validatePasswordResetToken(request.getToken());
+            user = token.getUser();
+            tokenService.consumePasswordResetToken(request.getToken());
+        } else if (request.getEmail() != null && request.getOtp() != null) {
+            com.debjitpal.jobportal.user_service.entity.PasswordResetToken token = tokenService.validatePasswordResetOtp(request.getEmail(), request.getOtp());
+            user = token.getUser();
+            tokenService.consumePasswordResetOtp(request.getEmail(), request.getOtp());
+        } else {
+            throw new RuntimeException("Reset token or email with OTP is required");
+        }
         
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         
-        tokenService.consumePasswordResetToken(request.getToken());
         tokenService.revokeAllRefreshTokensForUser(user); // Force re-login on all devices
     }
 
@@ -314,26 +353,60 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public void sendEmailVerification(EmailVerificationRequest request) {
-        // Find user by email, ignore if not found or already verified to prevent email enumeration
-        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
-            if (!user.isEmailVerified()) {
-                String verificationToken = tokenService.generateEmailVerificationToken(user);
-                // TODO: send verificationToken to user via email
-                System.out.println("Generated verification token for " + user.getEmail() + ": " + verificationToken);
-            }
-        });
+        String targetEmail = request.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(targetEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + targetEmail));
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("Email is already verified");
+        }
+        tokenService.generateEmailVerificationOtp(user);
+        log.info("Email verification OTP requested and dispatched to {}", targetEmail);
     }
 
     @Override
-    public void confirmEmail(ConfirmEmailRequest request) {
-        com.debjitpal.jobportal.user_service.entity.EmailVerificationToken token = tokenService.validateEmailVerificationToken(request.getToken());
+    @Transactional
+    public ApiResponse confirmEmail(ConfirmEmailRequest request) {
+        String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
+        String otpCode = request.getEffectiveOtp();
+        if (otpCode == null || otpCode.isBlank()) {
+            throw new BadRequestException("Verification OTP is required");
+        }
+
+        com.debjitpal.jobportal.user_service.entity.EmailVerificationToken token;
+        if (email != null && !email.isBlank()) {
+            token = tokenService.validateEmailVerificationOtp(email, otpCode);
+        } else {
+            token = tokenService.validateEmailVerificationToken(otpCode);
+        }
+
+        // Eagerly fetch and update User within this active transaction to avoid LazyInitializationException
         User user = token.getUser();
-        
+        if (user == null && email != null) {
+            user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        } else if (user != null) {
+            user = userRepository.findById(user.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        } else {
+            throw new ResourceNotFoundException("User associated with verification token not found");
+        }
+
         user.setEmailVerified(true);
+        user.setEmailVerifiedAt(LocalDateTime.now());
+        user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
-        
-        tokenService.consumeEmailVerificationToken(request.getToken());
+
+        // Consume (delete) the token so it is removed from the DB permanently after use
+        if (email != null && !email.isBlank()) {
+            tokenService.consumeEmailVerificationOtp(email, otpCode);
+        } else {
+            tokenService.consumeEmailVerificationToken(otpCode);
+        }
+
+        log.info("Email verified successfully for user: {}", user.getEmail());
+        return new ApiResponse(true, "Email verified successfully");
     }
 
     @Override

@@ -23,4 +23,15 @@ public class SignupRequest {
     private String password;
 
     private UserRole role;
+
+    @com.fasterxml.jackson.annotation.JsonAlias({"phoneNumber", "phone_number"})
+    private String phone;
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phone = phoneNumber;
+    }
+
+    public String getPhoneNumber() {
+        return this.phone;
+    }
 }

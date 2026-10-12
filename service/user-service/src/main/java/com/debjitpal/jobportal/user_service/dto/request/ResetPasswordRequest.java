@@ -5,9 +5,17 @@ import lombok.Data;
 
 @Data
 public class ResetPasswordRequest {
-    @NotBlank(message = "Token is required")
+
     private String token;
+
+    private String email;
+
+    private String otp;
 
     @NotBlank(message = "New password is required")
     private String newPassword;
+
+    public void setEmail(String email) {
+        this.email = email != null ? email.toLowerCase() : null;
+    }
 }

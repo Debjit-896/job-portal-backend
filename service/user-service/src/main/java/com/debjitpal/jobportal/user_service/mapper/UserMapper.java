@@ -11,6 +11,8 @@ public class UserMapper {
         userResponse.setEmail(user.getEmail());
         userResponse.setRole(user.getRole());
         userResponse.setStatus(user.getStatus());
+        userResponse.setEmailVerified(user.isEmailVerified());
+        userResponse.setEmailVerifiedAt(user.getEmailVerifiedAt());
         userResponse.setLastLoginAt(user.getLastLoginAt());
         userResponse.setCreatedAt(user.getCreatedAt());
         return userResponse;

@@ -48,6 +48,9 @@ public class User {
     private boolean emailVerified;
 
     @Column
+    private LocalDateTime emailVerifiedAt;
+
+    @Column
     private LocalDateTime lastLoginAt;
 
     @Column

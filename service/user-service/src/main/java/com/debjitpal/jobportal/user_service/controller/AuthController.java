@@ -1,5 +1,6 @@
 package com.debjitpal.jobportal.user_service.controller;
 
+import com.debjitpal.jobportal.dto.response.ApiResponse;
 import com.debjitpal.jobportal.dto.response.UserResponse;
 import com.debjitpal.jobportal.user_service.dto.request.*;
 import com.debjitpal.jobportal.user_service.dto.response.*;
@@ -96,6 +97,13 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping({"/verify-reset-otp", "/forgot-password/verify"})
+    public ResponseEntity<VerifyResetOtpResponse> verifyResetOtp(
+            @RequestBody @Valid VerifyResetOtpRequest request
+    ) {
+        return ResponseEntity.ok(authService.verifyResetOtp(request));
+    }
+
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(
             @RequestBody @Valid ResetPasswordRequest request
@@ -133,11 +141,10 @@ public class AuthController {
     }
 
     @PostMapping("/email-verification/confirm")
-    public ResponseEntity<Void> confirmEmail(
+    public ResponseEntity<ApiResponse> confirmEmail(
             @RequestBody @Valid ConfirmEmailRequest request
     ) {
-        authService.confirmEmail(request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(authService.confirmEmail(request));
     }
 
     @GetMapping("/oauth/accounts")

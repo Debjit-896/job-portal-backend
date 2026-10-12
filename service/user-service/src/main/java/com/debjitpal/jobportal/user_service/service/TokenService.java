@@ -11,12 +11,19 @@ public interface TokenService {
     void revokeRefreshToken(String rawToken);
 
     String generatePasswordResetToken(User user);
+    String generatePasswordResetOtp(User user);
     PasswordResetToken validatePasswordResetToken(String rawToken);
+    PasswordResetToken validatePasswordResetOtp(String email, String rawOtp);
+    String verifyPasswordResetOtp(String email, String rawOtp);
     void consumePasswordResetToken(String rawToken);
+    void consumePasswordResetOtp(String email, String rawOtp);
 
     String generateEmailVerificationToken(User user);
+    String generateEmailVerificationOtp(User user);
     EmailVerificationToken validateEmailVerificationToken(String rawToken);
+    EmailVerificationToken validateEmailVerificationOtp(String email, String rawOtp);
     void consumeEmailVerificationToken(String rawToken);
+    void consumeEmailVerificationOtp(String email, String rawOtp);
 
     void revokeAllRefreshTokensForUser(User user);
 }
